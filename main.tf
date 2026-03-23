@@ -40,14 +40,14 @@ resource "terraform_data" "main" {
 resource "aws_ec2_instance_state" "main" {
     instance_id = aws_instance.main.id
     state = "stopped"
-    depends_on = [ terraform_data.main ]
+    depends_on = [terraform_data.main]
     
 }
 
 resource "aws_ami_from_instance" "main" {
     name = "${var.project}-${var.environment}-${var.component}"
     source_instance_id = aws_instance.main.id
-    depends_on = [ aws_ec2_instance_state.main ]
+    depends_on = [aws_ec2_instance_state.main]
 
     tags = merge(
         {
@@ -128,6 +128,7 @@ resource "aws_autoscaling_group" "main" {
   
   launch_template {
     id = aws_launch_template.main.id
+    version = "$latest"
   }
 
   vpc_zone_identifier       = [local.private_subnet_id]
@@ -141,7 +142,7 @@ resource "aws_autoscaling_group" "main" {
     triggers = ["launch_template"]
   }
 
-  dynamic tag {
+  dynamic "tag" {
     for_each = merge(
         {
             Name = "${var.project}-${var.environment}-${var.component}"
@@ -199,7 +200,7 @@ resource "terraform_data" "main_delete" {
     triggers_replace = [
         aws_instance.main.id
     ]
-    depends_on = [ aws_autoscaling_policy.main ]
+    depends_on = [aws_autoscaling_policy.main]
 
     provisioner "local-exec" {
        command = "aws ec2 terminate-instances --instance-ids ${aws_instance.main.id}"
